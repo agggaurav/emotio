@@ -8,17 +8,35 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import LinearSVC
 from sklearn.externals import joblib
 from getdata import getdata
+import timeit
 
+start=timeit.default_timer()
 images,labels=getdata()
 imagespath = "dataset/ck+/cohn-kanade-images/"
 labelspath="dataset/ck+/Emotion/"
+def facecrop(image):
+	face_cascade=cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+	face_cascade2=cv2.CascadeClassifier('haarcascade_frontalface_alt.xml')
+        #print image.shape
+	gray=cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+	faces=face_cascade.detectMultiScale(gray,1.3,5)
+        if len(faces)==0:
+            faces=face_cascade2.detectMultiScale(gray,1.3,5)
+        for (x,y,w,h) in faces:
+            return gray[y:y+h, x:x+w]
 def createBOW():
-    dsize=10
+    cntsubjects=0
+    cnt=0
+    cnt2=0
+    dsize=400
     bof=cv2.BOWKMeansTrainer(dsize)
     sessions=os.listdir(imagespath)
+    print "Processing dataset"
+    time1=timeit.default_timer()
     for subject in images:
         #print subject
-        sub=subject[0][0][:4]
+        if len(subject)!=0:
+                sub=subject[0][0][:4]
         #print sub
         for session in subject:
             #print session
@@ -28,35 +46,65 @@ def createBOW():
                 #sub=image[:4]
                 #sess=image[5:8]
                 #print image
-                gray=cv2.imread(imagespath+sub+'/'+sess+'/'+image,0)
-                kp,dsc=sift.detectAndCompute(gray,None)
-                bof.add(dsc)
-                #extractfeature(image)
+                gray=cv2.imread(imagespath+sub+'/'+sess+'/'+image)
+                #cv2.imshow('full',gray)
+                #cv2.waitKey(0)
+                if gray is not None:
+                    justface=facecrop(gray) 
+                #cv2.imshow('face',gray)
+                #cv2.waitKey(0)
+                if justface is None:
+                    print "no face",imagespath+sub+'/'+sess+'/'+image
+                    cnt+=1
+                    gray=cv2.imread(imagespath+sub+'/'+sess+'/'+image)
+                    if gray is not None:
+                        kp,dsc=sift.detectAndCompute(gray,None)
+                        bof.add(dsc)
+                    else:
+                        cnt2+=1
+                        print "no image",imagespath+sub+'/'+sess+'/'+image
+                else:
+                        kp,dsc=sift.detectAndCompute(justface,None)
+                        bof.add(dsc)
+        cntsubjects+=1
+        print "Subjects processed",cntsubjects
+
+    #extractfeature(image)
     #print 'hahah'
+    time2=timeit.default_timer()
+    print "Processing ended, Time taken",time2-time1
+    print "Clustering begins"
+    clus=timeit.default_timer()
     dictionary=bof.cluster()
+    clus2=timeit.default_timer()
+    print "Clustering ends, Time taken",clus2-clus
+    print "no face",cnt
+    print "no image",cnt2
     FLANN_INDEX_KDTREE = 0
     index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
     search_params = dict(checks=50)   # or pass empty dictionary
     flann = cv2.FlannBasedMatcher(index_params,search_params)
     print type(dictionary)
-    print 'h'
     bowdict.setVocabulary(dictionary)
     joblib.dump(dictionary,'trained/bow/bow.pkl')
-    print 'a'
     #filee=open('bow','w')
     #filee.write(bowdict)
     #filee.close()
 
 def extractfeature(path):
-    image=cv2.imread(path,0)
+    image=cv2.imread(path)
+    image=facecrop(image)
     return bowdict.compute(image,sift.detect(image))
 
 def trainSVM():
     train_desc=[]
     train_labels=[]
+    print "Acquiring training descriptors and labels"
+    ttt=timeit.default_timer()
     for i,l in zip(images,labels):
         #print i,l
-        subject=i[0][0][:4]
+        if len(i)!=0:
+            subject=i[0][0][:4]
         #print subject
         for ii,ll in zip(i,l):
             #print ii,ll
@@ -74,8 +122,14 @@ def trainSVM():
                 data=open(labelspath+subject+'/'+session+'/'+labelfile)
                 emotion=data.read()
                 train_labels.append(emotion)
+    tttt=timeit.default_timer()
+    print "Training descriptors and labels acquired", tttt-ttt
+    print "SVM training begins"
+    svmtime=timeit.default_timer()
     clf=OneVsRestClassifier(svm.SVC(kernel='rbf'))
     clf.fit(np.array(train_desc),np.array(train_labels))
+    svmtime2=timeit.default_timer()
+    print "SVM training ended, Time taken",svmtime2-svmtime
     joblib.dump(clf,'trained/svm/svm.pkl') 
 sift=cv2.xfeatures2d.SIFT_create()
 sift2 = cv2.xfeatures2d.SIFT_create()
@@ -83,3 +137,6 @@ bowdict = cv2.BOWImgDescriptorExtractor(sift2, cv2.BFMatcher(cv2.NORM_L2))
 createBOW()
 #print bowdict
 trainSVM()
+stop=timeit.default_timer()
+
+print "Total time ",stop-start

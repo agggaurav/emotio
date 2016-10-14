@@ -9,6 +9,7 @@ from sklearn.svm import LinearSVC
 from sklearn.externals import joblib
 
 def getdata():
+	cnt=0
 	image_paths=[]
 	imagespath = "dataset/ck+/cohn-kanade-images/"
 	labelspath="dataset/ck+/Emotion/"
@@ -27,9 +28,15 @@ def getdata():
 		images=[]
 		labels=[]
 		for i in x:
-			images.append(os.listdir(cur_images+'/'+i))
+                    if i[0]=='.':
+                        pass
+                    else:
+                        images.append(os.listdir(cur_images+'/'+i))
 		for i in y:
-			labels.append(os.listdir(cur_labels+'/'+i))
+                    if i[0]=='.':
+                        pass
+                    else:
+                        labels.append(os.listdir(cur_labels+'/'+i))
 		finalimages.append(images)
 		finallabels.append(labels)
 		#print len(images)
@@ -39,7 +46,10 @@ def getdata():
 	#print finallabels
 	#for i,l in zip(finalimages,finallabels):
 	#    for ii,ll in zip(i,l):
-	#        print ii,ll
+        #        if ii[0][:8]!=ll[0][:8]:
+        #            print ii,ll
+        #            cnt+=1
+        #print cnt
 	return finalimages,finallabels
 
 #getdata()
