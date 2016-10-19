@@ -122,14 +122,15 @@ Subjects processed 120
 Subjects processed 121
 Subjects processed 122
 Subjects processed 123
-Processing ended, Time taken 922.593245029
+Total images used 1962
+Processing ended, Time taken 218.584421158
 Clustering begins
-Clustering ends, Time taken 8827.25400019
+Clustering ends, Time taken 2011.95222592
 no face 0
 no image 0
 <type 'numpy.ndarray'>
 Acquiring training descriptors and labels
-Training descriptors and labels acquired 852.973864079
+Training descriptors and labels acquired 218.708361149
 SVM training begins
-SVM training ended, Time taken 34.3327231407
-Total time  10637.2580268
+SVM training ended, Time taken 3.99456191063
+Total time  2453.27194691

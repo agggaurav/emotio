@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 import os
 from sklearn import svm
-from sklearn import datasets
 from sklearn.svm import SVC
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import LinearSVC
@@ -23,7 +22,9 @@ def facecrop(image):
             faces=face_cascade2.detectMultiScale(gray,1.3,5)
 	print faces
 	for (x,y,w,h) in faces:
-		return gray[y:y+h, x:x+w]
+		face= gray[y:y+h, x:x+w]
+		return face[0.1*h :h-0.1*h,0.15*h:w-0.15*h]
+
 
 print "import time ",stop-start
 def extractfeature(path):
@@ -57,7 +58,7 @@ stop=timeit.default_timer()
 print "svm load time",stop-start
 #print bowdict
 start=timeit.default_timer()
-test=extractfeature('abcd.jpg')
+test=extractfeature('ab.png')
 stop=timeit.default_timer()
 print "extract features time",stop-start
 start=timeit.default_timer()

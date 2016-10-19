@@ -23,9 +23,11 @@ def facecrop(image):
         if len(faces)==0:
             faces=face_cascade2.detectMultiScale(gray,1.3,5)
         for (x,y,w,h) in faces:
-            return gray[y:y+h, x:x+w]
+            face= gray[y:y+h, x:x+w]
+            return face[0.1*h :h-0.1*h,0.15*h:w-0.15*h]
 def createBOW():
     cntsubjects=0
+    totalimages=0
     cnt=0
     cnt2=0
     dsize=400
@@ -41,34 +43,40 @@ def createBOW():
         for session in subject:
             #print session
             sess=session[0][5:8]
-            #print sess
+            #print sess,len(session)
+            no_of_images=len(session)
             for image in session:
                 #sub=image[:4]
                 #sess=image[5:8]
-                #print image
-                gray=cv2.imread(imagespath+sub+'/'+sess+'/'+image)
-                #cv2.imshow('full',gray)
-                #cv2.waitKey(0)
-                if gray is not None:
-                    justface=facecrop(gray) 
-                #cv2.imshow('face',gray)
-                #cv2.waitKey(0)
-                if justface is None:
-                    print "no face",imagespath+sub+'/'+sess+'/'+image
-                    cnt+=1
+                #print image,image[-6:-4]
+                imageno=int(image[-6:-4])
+                if imageno<=no_of_images and imageno>no_of_images-6:
+                    #print image
+                    totalimages+=1
                     gray=cv2.imread(imagespath+sub+'/'+sess+'/'+image)
+                    #cv2.imshow('full',gray)
+                    #cv2.waitKey(0)
                     if gray is not None:
-                        kp,dsc=sift.detectAndCompute(gray,None)
-                        bof.add(dsc)
+                        justface=facecrop(gray) 
+                    #cv2.imshow('face',gray)
+                    #cv2.waitKey(0)
+                    if justface is None:
+                        print "no face",imagespath+sub+'/'+sess+'/'+image
+                        cnt+=1
+                        gray=cv2.imread(imagespath+sub+'/'+sess+'/'+image)
+                        if gray is not None:
+                            kp,dsc=sift.detectAndCompute(gray,None)
+                            bof.add(dsc)
+                        else:
+                            cnt2+=1
+                            print "no image",imagespath+sub+'/'+sess+'/'+image
                     else:
-                        cnt2+=1
-                        print "no image",imagespath+sub+'/'+sess+'/'+image
-                else:
-                        kp,dsc=sift.detectAndCompute(justface,None)
-                        bof.add(dsc)
+                            kp,dsc=sift.detectAndCompute(justface,None)
+                            bof.add(dsc)
         cntsubjects+=1
         print "Subjects processed",cntsubjects
 
+    print "Total images used",totalimages
     #extractfeature(image)
     #print 'hahah'
     time2=timeit.default_timer()
@@ -110,14 +118,18 @@ def trainSVM():
             #print ii,ll
             session=ii[0][5:8]
             cnt=0
-            #print session
+            #print session,len(ii)
+            no_of_images=len(ii)
             for image in ii:
                 #print imagespath+subject+'/'+session+'/'+image
-                feature=extractfeature(imagespath+subject+'/'+session+'/'+image)
-                #print feature
-                train_desc.extend(feature)
-                cnt+=1
-            for _ in xrange(cnt):
+                imageno=int(image[-6:-4])
+                #print image,imageno
+                if imageno<=no_of_images and imageno>no_of_images-6:
+                    feature=extractfeature(imagespath+subject+'/'+session+'/'+image)
+                    #print feature
+                    train_desc.extend(feature)
+                    cnt+=1
+            for _ in xrange(6):
                 labelfile=ll[0]
                 data=open(labelspath+subject+'/'+session+'/'+labelfile)
                 emotion=data.read()
@@ -131,12 +143,14 @@ def trainSVM():
     svmtime2=timeit.default_timer()
     print "SVM training ended, Time taken",svmtime2-svmtime
     joblib.dump(clf,'trained/svm/svm.pkl') 
-sift=cv2.xfeatures2d.SIFT_create()
-sift2 = cv2.xfeatures2d.SIFT_create()
-bowdict = cv2.BOWImgDescriptorExtractor(sift2, cv2.BFMatcher(cv2.NORM_L2))
-createBOW()
-#print bowdict
-trainSVM()
-stop=timeit.default_timer()
-
-print "Total time ",stop-start
+#sift=cv2.xfeatures2d.SIFT_create()
+#sift2 = cv2.xfeatures2d.SIFT_create()
+#bowdict = cv2.BOWImgDescriptorExtractor(sift2, cv2.BFMatcher(cv2.NORM_L2))
+##cv2.imshow('haha',facecrop(cv2.imread('abcd.jpg')))
+##cv2.waitKey(0)
+#createBOW()
+##print bowdict
+#trainSVM()
+#stop=timeit.default_timer()
+#
+#print "Total time ",stop-start
