@@ -1,4 +1,4 @@
-*.pyc
+
 
 trained/bow/*
 trained/svm/*
@@ -6,3 +6,7 @@ trained/svm/*
 dataset/ck+/cohn-kanade-images/*
 dataset/ck+/Emotion/*
 
+*.png
+*.jpg
+*.jpeg
+*.gif
