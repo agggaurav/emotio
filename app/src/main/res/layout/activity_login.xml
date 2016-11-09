@@ -41,6 +41,12 @@
             android:id="@+id/signin"
             android:layout_centerVertical="true"
             android:layout_centerHorizontal="true" />
+        <com.facebook.login.widget.LoginButton
+            android:id="@+id/login_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            />
 
     </LinearLayout>
 
@@ -57,6 +63,7 @@
             android:id="@+id/signup"
             android:layout_gravity="center"
             />
+
     </LinearLayout>
 
 

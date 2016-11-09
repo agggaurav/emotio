@@ -3,7 +3,7 @@
     package="com.example.gaurav.card" >
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
@@ -12,26 +12,32 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
+        <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name" >
-
-        </activity>
-        <activity
-            android:name=".SignUp"
-            android:label="@string/app_name" >
-
-        </activity>
-        <activity
-            android:name=".LoginActivity"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.MyGreenTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".SignUp"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.MyGreenTheme">
+
+        </activity>
+        <activity
+            android:name=".LoginActivity"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.MyGreenTheme">
+
+        </activity>
+        <provider android:authorities="com.facebook.app.FacebookContentProvider1264156183648611"
+            android:name="com.facebook.FacebookContentProvider"
+            android:exported="true">
+        </provider>
     </application>
 
 </manifest>

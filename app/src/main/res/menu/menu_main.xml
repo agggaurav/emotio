@@ -6,4 +6,11 @@
         android:orderInCategory="100"
         app:showAsAction="never" />
         -->
+    <ImageButton
+        android:id="@+id/logout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:alpha="1"
+        android:src="@drawable/ic_dots"/>
 </menu>

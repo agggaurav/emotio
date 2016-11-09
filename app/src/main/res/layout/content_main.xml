@@ -7,12 +7,20 @@
     android:background="@color/viewBg"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:showIn="@layout/activity_main">
-
+    <com.tuesda.walker.circlerefresh.CircleRefreshLayout
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        app:AniBackColor="#ff8b90af"
+        app:AniForeColor="#ffffffff"
+        app:CircleSmaller="6"
+        android:id="@+id/refresh_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:clipToPadding="false"
         android:scrollbars="vertical" />
+    </com.tuesda.walker.circlerefresh.CircleRefreshLayout>
 
 </RelativeLayout>

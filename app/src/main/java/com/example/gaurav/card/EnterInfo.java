@@ -34,14 +34,12 @@ public class EnterInfo extends Fragment {
     EditText name,password,cnpassword,email;
     public RadioGroup radioSexGroup;
     public RadioButton male,female;
-    private static final String REGISTER_URL = "http://192.168.1.102:8000/user/";
-public String gender;
+    private static final String REGISTER_URL = Constants.ip+"/user/";
+    public String gender;
     public static final String KEY_Name = "name";
     public static final String KEY_PASSWORD = "password";
     public static final String KEY_EMAIL="email_id";
     public static final String KEY_GENDER="gender";
-
-
 
     public EnterInfo() {
         // Required empty public constructor
@@ -86,6 +84,7 @@ public String gender;
                 Profilepic fragment1 = new Profilepic();
                 Bundle args = new Bundle();
                 args.putString("email", email.getText().toString());
+                args.putString("password",password.getText().toString());
                 fragment1.setArguments(args);
                 FragmentManager fragmentManager = getFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();

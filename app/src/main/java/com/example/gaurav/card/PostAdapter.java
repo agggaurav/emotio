@@ -1,6 +1,11 @@
 package com.example.gaurav.card;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.media.Image;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -12,11 +17,29 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
+import com.facebook.share.ShareApi;
+import com.facebook.share.model.SharePhoto;
+import com.facebook.share.model.SharePhotoContent;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Gaurav on 18-10-2016.
@@ -26,10 +49,16 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
     public OneFragment mContext;
     public List<Post> postList;
     public ImageLoader imageLoader;
+    public String URL=Constants.ip+"/like/";
+    public SessionManager session;
+    private String LoggedUserEmail;
+    private CallbackManager callbackManager;
+    private LoginManager manager;
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
         public TextView title, count;
-        public ImageView  overflow;
+        public ImageView  overflow,like,share;
+
         public NetworkImageView thumbnail;
         public String imgurl;
 
@@ -40,6 +69,8 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
             //count = (TextView) view.findViewById(R.id.count);
             thumbnail = (NetworkImageView) view.findViewById(R.id.thumbnail);
             overflow = (ImageView) view.findViewById(R.id.overflow);
+            like=(ImageView) view.findViewById(R.id.like);
+            share=(ImageView) view.findViewById(R.id.share);
         }
     }
 
@@ -63,14 +94,17 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.album_card, parent, false);
-
+        FacebookSdk.sdkInitialize(mContext.getContext());
+        session = new SessionManager(mContext.getContext());
+        HashMap<String, String> user = session.getUserDetails();
+        LoggedUserEmail = user.get(SessionManager.KEY_EMAIL);
         return new MyViewHolder(itemView);
     }
 
 
     @Override
     public void onBindViewHolder(final MyViewHolder holder, int position) {
-        Post post = postList.get(position);
+        final Post post = postList.get(position);
         holder.title.setText(post.getName());
 
         Log.e("image loading", "qwwwwwwwwwwwwwwwwwwww");
@@ -78,7 +112,16 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
         (holder.thumbnail).setImageDrawable(post.getThumbnail());
         final ImageView thumbnails=holder.thumbnail;
         thumbnails.setImageDrawable(post.getThumbnail());
-        loadImage(post.getImageUrl(),holder.thumbnail);
+        loadImage(post.getImageUrl(), holder.thumbnail);
+        if(post.getlike()==true)
+        {
+            holder.like.setImageDrawable(ContextCompat.getDrawable(mContext.getContext(), R.drawable.like));
+        }
+        else
+        {
+            holder.like.setImageDrawable(ContextCompat.getDrawable(mContext.getContext(),R.drawable.heart));
+        }
+        callbackManager = CallbackManager.Factory.create();
         thumbnails.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -98,7 +141,98 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
                 showPopupMenu(holder.overflow);
             }
         });
+
+        holder.like.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                holder.like.setImageDrawable(ContextCompat.getDrawable(mContext.getContext(), R.drawable.like));
+                likeimage(post);
+            }
+        });
+
+        holder.share.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                    shareimage(post);
+
+            }
+        });
     }
+
+public void shareimage(final Post post)
+{
+    List<String> permissionNeeds = Arrays.asList("publish_actions");
+
+    //this loginManager helps you eliminate adding a LoginButton to your UI
+    manager = LoginManager.getInstance();
+
+    manager.logInWithPublishPermissions(mContext.getActivity(), permissionNeeds);
+
+    manager.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+                @Override
+                public void onSuccess(LoginResult loginResult) {
+                    sharePhotoToFacebook(post);
+                }
+
+                @Override
+                public void onCancel() {
+                    System.out.println("onCancel");
+                }
+
+                @Override
+                public void onError(FacebookException e) {
+
+                }
+            }
+    );
+    }
+    private void sharePhotoToFacebook(Post post){
+        Bitmap image = BitmapFactory.decodeResource(mContext.getResources(), R.mipmap.ic_launcher);
+        SharePhoto photo = new SharePhoto.Builder()
+                .setBitmap(image)
+                .setCaption("burppp!!!")
+                .build();
+
+        SharePhotoContent content = new SharePhotoContent.Builder()
+                .addPhoto(photo)
+                .build();
+
+        ShareApi.share(content, null);
+
+    }
+
+    public void likeimage(final Post p)
+    {
+
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, URL,
+                    new Response.Listener<String>() {
+                        //sdd
+                        @Override
+                        public void onResponse(String response) {
+                            Toast.makeText(mContext.getContext(), response, Toast.LENGTH_LONG).show();
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Toast.makeText(mContext.getContext(), error.toString(), Toast.LENGTH_LONG).show();
+                        }
+                    }) {
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<String, String>();
+                    params.put("post_id", p.getId());
+                    params.put("liked_by", LoggedUserEmail);
+                    return params;
+                }
+
+            };
+
+            RequestQueue requestQueue = Volley.newRequestQueue(mContext.getContext());
+            requestQueue.add(stringRequest);
+        }
+
 
     /**
      * Showing popup menu when tapping on 3 dots
@@ -106,7 +240,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
 
     private void loadImage(String media, NetworkImageView imageView){
 
-        String url="http://192.168.1.102:8000";
+        String url=Constants.ip;
         url=url+media;
         if(url.equals("")){
             Toast.makeText(mContext.getContext(),"Please enter a URL", Toast.LENGTH_LONG).show();

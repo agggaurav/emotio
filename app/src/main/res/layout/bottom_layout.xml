@@ -22,5 +22,4 @@
             app:bb_tabXmlResource="@layout/bottombar_tabs" />
 
 
-
 </RelativeLayout>

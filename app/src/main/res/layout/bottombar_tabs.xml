@@ -4,19 +4,19 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent">
         <tab
-            android:id="@+id/tab_search"
+            id="@+id/tab_search"
             android:icon="@drawable/search"
             android:title="Search"
             />
         <tab
-            android:id="@+id/tab_camera"
+            id="@+id/tab_camera"
             android:icon="@drawable/cameraicon"
             android:title="Camera"
              />
         <tab
-            android:id="@+id/tab_profile"
+            id="@+id/tab_profile"
             android:icon="@drawable/users"
             android:title="Profile"
              />
-    </tabs>
-    
+
+       </tabs>

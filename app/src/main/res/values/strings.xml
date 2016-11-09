@@ -11,5 +11,6 @@
     <string name="titleA">S</string>
     <string name="title_activity_sign_up">SignUp</string>
     <string name="title_activity_login">LoginActivity</string>
+    <string name="facebook_app_id">1264156183648611</string>
 </resources>
 

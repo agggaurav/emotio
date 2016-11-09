@@ -43,6 +43,7 @@ public class Profilepic extends Fragment {
     private Button buttonUpload;
     private ImageView imageView;
     private EditText editText;
+    SessionManager session;
 
     //Image request code
     private int PICK_IMAGE_REQUEST = 1;
@@ -60,7 +61,7 @@ public class Profilepic extends Fragment {
     public Profilepic() {
         // Required empty public constructor
     }
-    public String value;
+    public String value,pvalue;
     private Button next;
     private int REQUEST_CAMERA = 0, SELECT_FILE = 1;
     private Button btnSelect;
@@ -78,6 +79,7 @@ public class Profilepic extends Fragment {
         // Inflate the layout for this fragment
         View view= inflater.inflate(R.layout.fragment_profilepic, container, false);
          value = getArguments().getString("email");
+        pvalue=getArguments().getString("password");
         Toast.makeText(getContext(),value,Toast.LENGTH_SHORT).show();
         btnSelect=(Button) view.findViewById(R.id.buttonLoadPicture);
         ivImage = (ImageView) view.findViewById(R.id.imgView);
@@ -95,7 +97,7 @@ public class Profilepic extends Fragment {
                 selectImage();
             }
         });
-
+        session = new SessionManager(getContext());
 
         return view;
 
@@ -128,13 +130,12 @@ public class Profilepic extends Fragment {
             @Override
             public void onClick(DialogInterface dialog, int item) {
                 boolean result = Utility.checkPermission(getActivity());
-
                 if (items[item].equals("Take Photo")) {
                     userChoosenTask = "Take Photo";
                     if (result)
                         cameraIntent();
-
-                } else if (items[item].equals("Choose from Library")) {
+                }
+                else if (items[item].equals("Choose from Library")) {
                     userChoosenTask = "Choose from Library";
                     if (result)
                         galleryIntent();
@@ -244,9 +245,12 @@ public class Profilepic extends Fragment {
         } catch (Exception exc) {
             Toast.makeText(getContext(), exc.getMessage(), Toast.LENGTH_SHORT).show();
         }
-        Intent home=new Intent(getActivity(),MainActivity.class);
-        startActivity(home);
+        session.createLoginSession(pvalue,value);
+        Intent i = new Intent(getContext(), MainActivity.class);
+        startActivity(i);
+
     }
+
     public String getPath(Uri uri) {
         Cursor cursor = getActivity().getContentResolver().query(uri, null, null, null, null);
         cursor.moveToFirst();

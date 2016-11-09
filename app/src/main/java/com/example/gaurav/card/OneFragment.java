@@ -1,16 +1,11 @@
 package com.example.gaurav.card;
 
-import android.annotation.TargetApi;
-import android.app.ActionBar;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.AppBarLayout;
-import android.support.design.widget.CollapsingToolbarLayout;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -21,6 +16,7 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.android.volley.RequestQueue;
@@ -30,12 +26,14 @@ import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.NetworkImageView;
 import com.android.volley.toolbox.Volley;
+import com.tuesda.walker.circlerefresh.CircleRefreshLayout;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -44,18 +42,27 @@ import java.util.List;
 
 public class OneFragment extends Fragment {
 
+    private static int SPLASH_TIME_OUT = 15000;
     public String actionbar_title;
+    private CircleRefreshLayout mRefreshLayout;
     private RecyclerView recyclerView;
+    private String userChoosenTask;
     private PostAdapter adapter;
+    private ImageView ivImage;
+    private Uri filePath;
     private List<Post> postList;
+    private List<String> likedpost;
+    SessionManager session;
     private RecyclerViewPositionHelper mRecyclerViewHelper;
-    String url = "http://192.168.1.102:8000/post/?format=json";
+    String url = Constants.ip+"/post/?format=json";
+    String like_url=Constants.ip;
     String data = "";
     // Defining the Volley request queue that handles the URL request concurrently
     RequestQueue requestQueue;
     private NetworkImageView imageView;
     private ImageLoader imageLoader;
-
+    private String session_email;
+    private int REQUEST_CAMERA = 0, SELECT_FILE = 1;
     public OneFragment() {
         // Required empty public constructor
     }
@@ -72,8 +79,15 @@ public class OneFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_one, container, false);
         imageView=(NetworkImageView) view.findViewById(R.id.imageView);
         recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
+        mRefreshLayout = (CircleRefreshLayout) view.findViewById(R.id.refresh_layout);
         imagetitle=(Toolbar) view.findViewById(R.id.toolbar2);
         //imagetitle.setTitle("image name");
+        session = new SessionManager(getContext());
+        HashMap<String, String> user = session.getUserDetails();
+        session_email = user.get(SessionManager.KEY_EMAIL);
+        like_url=like_url+"/like/"+session_email+"/?format=json";
+       // Toast.makeText(getApplicationContext(),session_email,Toast.LENGTH_SHORT).show();
+        likedpost=new ArrayList<>();
         postList = new ArrayList<>();
         adapter = new PostAdapter(this, postList);
         //Toast.makeText(getContext(),"1",Toast.LENGTH_SHORT).show();
@@ -83,7 +97,7 @@ public class OneFragment extends Fragment {
 //        recyclerView.addItemDecoration(new GridSpacingItemDecoration(2, dpToPx(10), true));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(adapter);
-        prepareAlbums();
+
         //Toast.makeText(getContext(),"2",Toast.LENGTH_SHORT).show();
         mRecyclerViewHelper = RecyclerViewPositionHelper.createHelper(recyclerView);
 
@@ -93,7 +107,7 @@ public class OneFragment extends Fragment {
                 super.onScrolled(recyclerView, dx, dy);
                 int ypos = recyclerView.computeVerticalScrollOffset();
                 if (ypos == 50) {
-          //          Toast.makeText(getContext(), "tttt", Toast.LENGTH_SHORT).show();
+                    //          Toast.makeText(getContext(), "tttt", Toast.LENGTH_SHORT).show();
                 }
                 int visibleItemCount = recyclerView.getChildCount();
                 if (dy > 0) {
@@ -124,14 +138,50 @@ public class OneFragment extends Fragment {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        getlikedpost();
+        //Toast.makeText(getContext(), "liked post id"+likedpost.get(0),Toast.LENGTH_SHORT).show();
+        prepareAlbums();
+        mRefreshLayout.setOnRefreshListener(
+                new CircleRefreshLayout.OnCircleRefreshListener() {
+                    @Override
+                    public void refreshing() {
+                        // do something when refresh starts
+
+                        adapter.notifyDataSetChanged();
+
+                        new Handler().postDelayed(new Runnable() {
+
+            /*
+             * Showing splash screen with a timer. This will be useful when you
+             * want to show case your app logo / company
+             */
+
+                            @Override
+                            public void run() {
+                                // This method will be executed once the timer is over
+                                // Start your app main activity
+                                mRefreshLayout.finishRefreshing();
+                                // close this activity
+
+                            }
+                        }, SPLASH_TIME_OUT);
+                        prepareAlbums();
+                        adapter.notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void completeRefresh() {
+                        // do something when refresh complete
+                        Toast.makeText(getContext(),"complete refresh",Toast.LENGTH_SHORT).show();
+                    }
+                });
 return view;
     }
-
-
 
     private void prepareAlbums() {
 
         requestQueue = Volley.newRequestQueue(getContext());
+        requestQueue=null;
         //Toast.makeText(getContext(),"requestQueue",Toast.LENGTH_SHORT).show();
        JsonArrayRequest arrayreq = new JsonArrayRequest(url,
                 // The second parameter Listener overrides the method onResponse() and passes
@@ -147,14 +197,22 @@ return view;
 
           //                      Toast.makeText(getContext(),"3",Toast.LENGTH_SHORT).show();
                                 JSONObject postObj = response.getJSONObject(i);
-
-                               String name=postObj.getString("id");
+                                String id=postObj.getString("id");
+                                String email_id=postObj.getString("email_id");
+                               String name=postObj.getString("username");
                                String imageurl=postObj.getString("image_posted");
             //                    Toast.makeText(getContext(),"4",Toast.LENGTH_SHORT).show();
                                BitmapDrawable img= loadImage(imageurl);
               //                  Toast.makeText(getContext(),"5",Toast.LENGTH_SHORT).show();
                                //BitmapDrawable drawable=new BitmapDrawable(img);
-                               Post a = new Post(name,img,imageurl);
+                               Post a = new Post(name,img,imageurl,id,email_id);
+                               if(likedpost.contains(id)) {
+                                   a.setlike(true);
+                               }
+                                else
+                               {
+                                   a.setlike(false);
+                               }
                                 //Toast.makeText(getContext(),"aaaa"+a.getName(),Toast.LENGTH_SHORT).show();
                                 postList.add(a);
                 //                Toast.makeText(getContext(),"6",Toast.LENGTH_SHORT).show();
@@ -187,9 +245,62 @@ return view;
 
     }
 
+
+
+    private void getlikedpost() {
+
+        requestQueue = Volley.newRequestQueue(getContext());
+        requestQueue=null;
+        //Toast.makeText(getContext(),"requestQueue",Toast.LENGTH_SHORT).show();
+        JsonArrayRequest arrayreq = new JsonArrayRequest(like_url,
+                // The second parameter Listener overrides the method onResponse() and passes
+                //JSONArray as a parameter
+                new Response.Listener<JSONArray>() {
+
+                    // Takes the response from the JSON request
+                    @Override
+                    public void onResponse(JSONArray response) {
+                        try {
+
+                            for (int i = 0; i < response.length(); i++) {
+
+                                //                      Toast.makeText(getContext(),"3",Toast.LENGTH_SHORT).show();
+                                JSONObject postObj = response.getJSONObject(i);
+                                String id=postObj.getString("post_id");
+                               // Toast.makeText(getContext(),id, Toast.LENGTH_LONG).show();
+                               likedpost.add(id);
+                            }
+
+                        }
+                        // Try and catch are included to handle any errors due to JSON
+                        catch (JSONException e) {
+                            // If an error occurs, this prints the error to the log
+                            e.printStackTrace();
+                        }
+                    }
+                },
+
+                new Response.ErrorListener() {
+                    @Override
+                    // Handles errors that occur due to Volley
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e("Volley", "Error");
+                    }
+                }
+        );
+
+// Access the RequestQueue through your singleton class.
+        AppController.getInstance().addToRequestQueue(arrayreq);
+        adapter.notifyDataSetChanged();
+        // Toast.makeText(getContext(),"7",Toast.LENGTH_SHORT).show();
+
+    }
+
+
+
     private BitmapDrawable loadImage(String media){
 
-        url="http://192.168.1.102:8000";
+        url=Constants.ip;
         url=url+media;
         if(url.equals("")){
             Toast.makeText(getContext(),"Please enter a URL", Toast.LENGTH_LONG).show();
